@@ -3,41 +3,88 @@
 <style>
 
 body {
-  font: 8px sans-serif;
+  font: 10px sans-serif;
 }
 
 .axis path,
 .axis line {
   fill: none;
-  stroke: #000;
+  stroke: #888;
   shape-rendering: crispEdges;
 }
 
 .dot {
 }
-
+select {
+   -webkit-appearance: none;
+   -moz-appearance: none;
+   appearance: none;
+   padding:2px;
+   padding-left:10px;
+   background:none;
+   border-radius:0px;
+   color:#000;
+   width:400px;
+}
+#xAxis{
+  width:742px;
+  margin-left:80px;
+}
+#yAxis{
+  width:550px;
+  position:absolute;
+  top:335px;
+  left:-240px;
+  -ms-transform: rotate(-90deg); /* IE 9 */
+  -webkit-transform: rotate(-90deg); /* Chrome, Safari, Opera */
+  transform: rotate(-90deg);
+}
+#chart{
+  padding:10px;
+  margin-left:30px;
+}
 </style>
 <body>
-  X Selector <select id = "xAxis"></select>
-  Y Selector <select id = "yAxis"></select><br/><br/>
+  Radius Selector <select id = "rAxis"></select>
+  
+  <select id = "yAxis"></select><br/><br/>
+  <div id = "chart"></div>
+ <select id = "xAxis"></select>
   
   
-<div id = "chart"></div>
 <script src="//d3js.org/d3.v3.min.js"></script>
   <script src="tip.js"></script>
 
 <script>
+var units = {
+  "value":"value unit",
+  "density":"# per sq mile",
+  "gmp":"$",
+  "popChange":"%"
+}
+var colors = ["#ded53f",
+"#66774c",
+"#baec42",
+"#bccc9f",
+"#61d84f",
+"#85832e",
+"#97de83",
+"#4b913b",
+"#d2d076",
+"#93b93a"]
 
 var margin = {top: 20, right: 20, bottom: 30, left: 40},
-    width = 600 - margin.left - margin.right,
-    height = 400 - margin.top - margin.bottom;
+    width = 800 - margin.left - margin.right,
+    height = 600 - margin.top - margin.bottom;
 
 var x = d3.scale.linear()
     .range([0, width]);
 
 var y = d3.scale.linear()
     .range([height, 0]);
-
+    
+var r = d3.scale.linear()
+    .range([5,20]);
 var color = d3.scale.category10();
 
 var xAxis = d3.svg.axis()
@@ -58,18 +105,20 @@ var svg = d3.select("#chart").append("svg")
 
 var xSelection = "value"
 var ySelection = "value"
+var rLabel = "value"
 d3.csv("groupdata.csv", function(error, data) {
   var list = ["value","density","gmp","popChange"]
   
   if (error) throw error;
-  draw(data,xSelection,ySelection)
+  draw(data,xSelection,ySelection,"value")
   
-  xSelection = generateAxis("x",list,data)
-  ySelection = generateAxis("y",list,data)
+  xSelection = generateAxis("x",list,data,"value")
+  ySelection = generateAxis("y",list,data,"value")
+  ySelection = generateAxis("r",list,data,"value")
   
 });
 
-function generateAxis(axis,list,data){
+function generateAxis(axis,list,data,rLabel){
 var xSelection = "value"
 var ySelection = "value"
   for(var i in list){
@@ -77,18 +126,20 @@ var ySelection = "value"
   }
   d3.select("#xAxis").on("change",function(){
     xSelection = d3.select(this).property('value')
-    update(data,xSelection,ySelection)
+    update(data,xSelection,ySelection,rLabel)
     
   })
   d3.select("#yAxis").on("change",function(){
     ySelection = d3.select(this).property('value')
-   
-   // draw(data,xSelection,ySelection)
-    update(data,xSelection,ySelection)
+    update(data,xSelection,ySelection,rLabel)
+  })
+  d3.select("#rAxis").on("change",function(){
+    rLabel = d3.select(this).property('value')
+    update(data,xSelection,ySelection,rLabel)
   })
 }
 
-function update(data,xLabel,yLabel){
+function update(data,xLabel,yLabel,rLabel){
   data.forEach(function(d) {
     d[xLabel] = +d[xLabel];
     d[yLabel] = +d[yLabel];
@@ -96,6 +147,7 @@ function update(data,xLabel,yLabel){
 
   x.domain(d3.extent(data, function(d) { return d[xLabel]; }));
   y.domain(d3.extent(data, function(d) { return d[yLabel] ; }));
+  r.domain(d3.extent(data, function(d) { return d[rLabel];}));
 
 d3.selectAll(".axis").remove()
 svg.append("g")
@@ -107,7 +159,7 @@ svg.append("g")
     .attr("x", width)
     .attr("y", -6)
     .style("text-anchor", "end")
-    .text(xLabel);
+    .text(units[xLabel]);
 
 svg.append("g")
     .attr("class", "y axis")
@@ -118,15 +170,17 @@ svg.append("g")
     .attr("y", 6)
     .attr("dy", ".71em")
     .style("text-anchor", "end")
-    .text(yLabel)
+    .text(units[yLabel])
 
   d3.selectAll("circle")
     .transition().duration(1000)
     .attr("cx", function(d) { return x(d[xLabel]); })
     .attr("cy", function(d) { return y(d[yLabel] ); })
+      .attr("r", function(d){return r(d[rLabel]); return 10;})
+    
 }
 
-function draw(data,xLabel,yLabel){
+function draw(data,xLabel,yLabel,rLabel){
   
   
     var tip = d3.tip()
@@ -142,6 +196,7 @@ function draw(data,xLabel,yLabel){
 
   x.domain(d3.extent(data, function(d) { return d[xLabel];}));
   y.domain(d3.extent(data, function(d) { return d[yLabel];}));
+  r.domain(d3.extent(data, function(d) { return d[rLabel];}));
 
   svg.append("g")
       .attr("class", "x axis")
@@ -152,7 +207,7 @@ function draw(data,xLabel,yLabel){
       .attr("x", width)
       .attr("y", -6)
       .style("text-anchor", "end")
-      .text(xLabel);
+      .text(units[xLabel]);
 
   svg.append("g")
       .attr("class", "y axis")
@@ -163,17 +218,17 @@ function draw(data,xLabel,yLabel){
       .attr("y", 6)
       .attr("dy", ".71em")
       .style("text-anchor", "end")
-      .text(yLabel)
+      .text(units[yLabel])
 
   svg.selectAll(".dot")
       .data(data)
       .enter().append("circle")
       .attr("class", xLabel+"_"+yLabel)
-      .attr("r", 10)
-      .attr("opacity",.2)
+      .attr("r", function(d){return r(d[rLabel]); return 10;})
+      .attr("opacity",.5)
       .attr("cx", function(d) { return x(d[xLabel]); })
       .attr("cy", function(d) { return y(d[yLabel] ); })
-      .style("fill", function(d) { return "black"; return color(d.species); })
+      .style("fill", function(d,i) { return colors[i] })
       .on("mouseover",function(d){
           var tipText = formatTip(d)
           tip.html(tipText)
