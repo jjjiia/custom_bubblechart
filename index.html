@@ -45,7 +45,6 @@ select {
 }
 </style>
 <body>
-  Radius Selector <select id = "rAxis"></select>
   
   <select id = "yAxis"></select><br/><br/>
   <div id = "chart"></div>
@@ -103,24 +102,24 @@ var svg = d3.select("#chart").append("svg")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     
 
-var xSelection = "value"
-var ySelection = "value"
-var rLabel = "value"
-d3.csv("groupdata.csv", function(error, data) {
-  var list = ["value","density","gmp","popChange"]
+var xSelection = "PopulationChange"
+var ySelection = "SumofLight"
+var rLabel = "Population2014"
+d3.csv("msa_overview.csv", function(error, data) {
+
+
+  var list= ["ALAND","MAX","AverageSumofLight","SumofLight","Population2000","Population2014","PopulationChange","Density2000","Density2014","LandArea","GMP2013","SOL_percapita"]
   
   if (error) throw error;
-  draw(data,xSelection,ySelection,"value")
-  
-  xSelection = generateAxis("x",list,data,"value")
-  ySelection = generateAxis("y",list,data,"value")
-  ySelection = generateAxis("r",list,data,"value")
+  draw(data,xSelection,ySelection,"MAX")
+  xSelection = generateAxis("x",list,data,xSelection)
+  ySelection = generateAxis("y",list,data,ySelection)
   
 });
 
 function generateAxis(axis,list,data,rLabel){
-var xSelection = "value"
-var ySelection = "value"
+var xSelection = "LandArea"
+var ySelection = "PopulationChange"
   for(var i in list){
     d3.select("#"+axis+"Axis").append("option").attr("value",list[i]).text(list[i])
   }
@@ -133,10 +132,7 @@ var ySelection = "value"
     ySelection = d3.select(this).property('value')
     update(data,xSelection,ySelection,rLabel)
   })
-  d3.select("#rAxis").on("change",function(){
-    rLabel = d3.select(this).property('value')
-    update(data,xSelection,ySelection,rLabel)
-  })
+
 }
 
 function update(data,xLabel,yLabel,rLabel){
